@@ -1,0 +1,9 @@
+#
+# fips-sx
+#
+---
+exports:
+    header-dirs : [ 'sx/include'  ]
+    modules:
+        sx:   sx
+
