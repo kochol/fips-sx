@@ -150,7 +150,6 @@ void sx__coro_yield(sx_coro_context* ctx, sx_fiber_t* pfrom, int nupdates sx_def
 // coroutines macros (use these instead of above sx__coro functions)
 #define sx_coro_declare(_name) static void coro__##_name(sx_fiber_transfer __transfer)
 #define sx_coro_userdata() __transfer.user
-#define sx_coro_end(_ctx) sx__coro_end((_ctx), &__transfer.from)
 #define sx_coro_wait(_ctx, _msecs) sx__coro_wait((_ctx), &__transfer.from, (_msecs))
 #define sx_coro_yield(_ctx) sx__coro_yield((_ctx), &__transfer.from, 1)
 #define sx_coro_yieldn(_ctx, _n) sx__coro_yield((_ctx), &__transfer.from, (_n))
