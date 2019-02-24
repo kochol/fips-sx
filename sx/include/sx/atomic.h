@@ -236,7 +236,7 @@ SX_FORCE_INLINE int64_t sx_atomic_cas64(sx_atomic_int64* a, int64_t xchg, int64_
 }
 
 
-#if (SX_COMPILER_GCC || SX_COMPILER_CLANG) && __STDC_VERSION__ >= 201112L && \
+#if !SX_PLATFORM_EMSCRIPTEN && (SX_COMPILER_GCC || SX_COMPILER_CLANG) && __STDC_VERSION__ >= 201112L && \
     !defined(__STDC_NO_ATOMICS__) && (SX_COMPILER_CLANG || SX_COMPILER_GCC >= 40900)
 #    include <stdatomic.h>
 typedef atomic_flag  sx_lock_t;

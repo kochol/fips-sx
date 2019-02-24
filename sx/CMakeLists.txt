@@ -94,7 +94,7 @@ fips_begin_lib(sx)
                     include/sx/tlsf-alloc.h)
 
     # Remove fiber functions for now on emscripten
-    if (EMSCRIPTEN)
+    if (FIPS_EMSCRIPTEN)
         list(REMOVE_ITEM SOURCE_FILES src/fiber.c)
         list(REMOVE_ITEM SOURCE_FILES include/sx/fiber.h)
     endif()
@@ -147,8 +147,9 @@ fips_begin_lib(sx)
                     "asm/ontop_${CPU_ARCH}_${ASM_EXT}")
     set_source_files_properties(${ASM_SOURCES} PROPERTIES COMPILE_DEFINITIONS BOOST_CONTEXT_EXPORT=)
 
-    if (EMSCRIPTEN) 
+    if (FIPS_EMSCRIPTEN) 
         unset(ASM_SOURCES)
+        add_compile_options(-Wsign-compare)
     endif()
     ####################################################################################################
 
@@ -178,7 +179,7 @@ fips_begin_lib(sx)
         sx_remove_compile_options(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" "/EHsc /GR")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GR-")
     endif()
-
+    
     fips_files(${SOURCE_FILES} ${INCLUDE_FILES} ${ASM_SOURCES})
 
 fips_end_lib(sx)
