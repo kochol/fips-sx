@@ -8,13 +8,6 @@
 #    include <android/log.h>
 #elif SX_PLATFORM_WINDOWS
 __declspec(dllimport) void __stdcall OutputDebugStringA(const char* _str);
-#elif SX_PLATFORM_APPLE
-#    if defined(__OBJC__)
-#        import <Foundation/NSObjCRuntime.h>
-#    else
-#        include <CoreFoundation/CFString.h>
-void NSLog(CFStringRef _format, ...);
-#    endif    // defined(__OBJC__)
 #else
 #    include <stdio.h>    // fputs, fflush
 #endif
@@ -24,22 +17,14 @@ void NSLog(CFStringRef _format, ...);
 extern "C" {
 #endif
 int _fltused = 0;
-#ifdef __cplusplus
-}
-#endif
 
-void sx__break_program(const char* text) {
+void sx__break_program(const char* text)
+{
     // print
 #if SX_PLATFORM_ANDROID
     __android_log_write(ANDROID_LOG_DEBUG, "", text);
 #elif SX_PLATFORM_WINDOWS
     OutputDebugStringA(text);
-#elif SX_PLATFORM_APPLE
-#    if defined(__OBJC__)
-    NSLog(@"%s", text);
-#    else
-    NSLog(__CFStringMakeConstantString("%s"), text);
-#    endif
 #else
     fputs(text, stderr);
     fflush(stderr);
@@ -57,3 +42,7 @@ void sx__break_program(const char* text) {
     *int3 = 3;
 #endif
 }
+
+#ifdef __cplusplus
+}
+#endif

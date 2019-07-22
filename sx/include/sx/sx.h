@@ -7,7 +7,6 @@
 //
 #pragma once
 
-#include "config.h"
 #include "macros.h"
 
 #include <assert.h>     // assert
@@ -49,22 +48,22 @@ SX_API void sx__break_program(const char* text);
 
 #ifndef sx_memset
 #    include <string.h>    // memset
-#    define sx_memset(_dst, _n, _sz) memset(_dst, _n, _sz)
+#    define sx_memset(_dst, _n, _sz) memset((_dst), (_n), (_sz))
 #endif
 
 #ifndef sx_memcpy
 #    include <string.h>    // memcpy
-#    define sx_memcpy(_dst, _src, _n) memcpy(_dst, _src, _n)
+#    define sx_memcpy(_dst, _src, _n) memcpy((_dst), (_src), (_n))
 #endif
 
 #ifndef sx_memmove
 #    include <string.h>    // memmove
-#    define sx_memmove(_dst, _src, _n) memmove(_dst, _src, _n)
+#    define sx_memmove(_dst, _src, _n) memmove((_dst), (_src), (_n))
 #endif
 
 #ifndef sx_memcmp
 #    include <string.h>    // memcmp
-#    define sx_memcmp(_p1, _p2, _n) memcmp(_p1, _p2, _n)
+#    define sx_memcmp(_p1, _p2, _n) memcmp((_p1), (_p2), (_n))
 #endif
 
 #define sx_swap(a, b, _type) \
@@ -76,30 +75,30 @@ SX_API void sx__break_program(const char* text);
 
 #ifndef __cplusplus
 #    if SX_COMPILER_GCC || SX_COMPILER_CLANG
-#        define sx_max(a, b)          \
-            ({                        \
-                typeof(a) __a = (a);  \
-                typeof(b) __b = (b);  \
-                (void)(&__a == &__b); \
-                __a > b ? __a : __b;  \
+#        define sx_max(a, b)                  \
+            ({                                \
+                typeof(a) var__a = (a);       \
+                typeof(b) var__b = (b);       \
+                (void)(&var__a == &var__b);   \
+                var__a > b ? var__a : var__b; \
             })
 
-#        define sx_min(a, b)          \
-            ({                        \
-                typeof(a) __a = (a);  \
-                typeof(b) __b = (b);  \
-                (void)(&__a == &__b); \
-                __a < b ? __a : __b;  \
+#        define sx_min(a, b)                  \
+            ({                                \
+                typeof(a) var__a = (a);       \
+                typeof(b) var__b = (b);       \
+                (void)(&var__a == &var__b);   \
+                var__a < b ? var__a : var__b; \
             })
 
-#        define sx_clamp(v_, min_, max_)    \
-            ({                              \
-                typeof(v_) _v = (v_);       \
-                typeof(min_) _min = (min_); \
-                typeof(max_) _max = (max_); \
-                (void)(&_min == &_max);     \
-                _v = _v < _max ? _v : _max; \
-                _v > _min ? _v : _min;      \
+#        define sx_clamp(v_, min_, max_)                        \
+            ({                                                  \
+                typeof(v_) var__v = (v_);                       \
+                typeof(min_) var__min = (min_);                 \
+                typeof(max_) var__max = (max_);                 \
+                (void)(&var__min == &var__max);                 \
+                var__v = var__v < var__max ? var__v : var__max; \
+                var__v > var__min ? var__v : var__min;          \
             })
 #    elif SX_COMPILER_MSVC
 // NOTE: Because we have some features lacking in MSVC+C compiler, the max,min,clamp macros does not
@@ -118,125 +117,155 @@ template <typename T>
 T sx_clamp(T v, T _min, T _max);
 
 template <>
-inline int sx_max(int a, int b) {
+inline int sx_max(int a, int b)
+{
     return (a > b) ? a : b;
 }
 template <>
-inline float sx_max(float a, float b) {
+inline float sx_max(float a, float b)
+{
     return (a > b) ? a : b;
 }
 template <>
-inline double sx_max(double a, double b) {
+inline double sx_max(double a, double b)
+{
     return (a > b) ? a : b;
 }
 template <>
-inline int8_t sx_max(int8_t a, int8_t b) {
+inline int8_t sx_max(int8_t a, int8_t b)
+{
     return (a > b) ? a : b;
 }
 template <>
-inline uint8_t sx_max(uint8_t a, uint8_t b) {
+inline uint8_t sx_max(uint8_t a, uint8_t b)
+{
     return (a > b) ? a : b;
 }
 template <>
-inline int16_t sx_max(int16_t a, int16_t b) {
+inline int16_t sx_max(int16_t a, int16_t b)
+{
     return (a > b) ? a : b;
 }
 template <>
-inline uint16_t sx_max(uint16_t a, uint16_t b) {
+inline uint16_t sx_max(uint16_t a, uint16_t b)
+{
     return (a > b) ? a : b;
 }
 template <>
-inline uint32_t sx_max(uint32_t a, uint32_t b) {
+inline uint32_t sx_max(uint32_t a, uint32_t b)
+{
     return (a > b) ? a : b;
 }
 template <>
-inline int64_t sx_max(int64_t a, int64_t b) {
+inline int64_t sx_max(int64_t a, int64_t b)
+{
     return (a > b) ? a : b;
 }
 template <>
-inline uint64_t sx_max(uint64_t a, uint64_t b) {
+inline uint64_t sx_max(uint64_t a, uint64_t b)
+{
     return (a > b) ? a : b;
 }
 
 template <>
-inline int sx_min(int a, int b) {
+inline int sx_min(int a, int b)
+{
     return (a < b) ? a : b;
 }
 template <>
-inline float sx_min(float a, float b) {
+inline float sx_min(float a, float b)
+{
     return (a < b) ? a : b;
 }
 template <>
-inline double sx_min(double a, double b) {
+inline double sx_min(double a, double b)
+{
     return (a < b) ? a : b;
 }
 template <>
-inline int8_t sx_min(int8_t a, int8_t b) {
+inline int8_t sx_min(int8_t a, int8_t b)
+{
     return (a < b) ? a : b;
 }
 template <>
-inline uint8_t sx_min(uint8_t a, uint8_t b) {
+inline uint8_t sx_min(uint8_t a, uint8_t b)
+{
     return (a < b) ? a : b;
 }
 template <>
-inline int16_t sx_min(int16_t a, int16_t b) {
+inline int16_t sx_min(int16_t a, int16_t b)
+{
     return (a < b) ? a : b;
 }
 template <>
-inline uint16_t sx_min(uint16_t a, uint16_t b) {
+inline uint16_t sx_min(uint16_t a, uint16_t b)
+{
     return (a < b) ? a : b;
 }
 template <>
-inline uint32_t sx_min(uint32_t a, uint32_t b) {
+inline uint32_t sx_min(uint32_t a, uint32_t b)
+{
     return (a < b) ? a : b;
 }
 template <>
-inline int64_t sx_min(int64_t a, int64_t b) {
+inline int64_t sx_min(int64_t a, int64_t b)
+{
     return (a < b) ? a : b;
 }
 template <>
-inline uint64_t sx_min(uint64_t a, uint64_t b) {
+inline uint64_t sx_min(uint64_t a, uint64_t b)
+{
     return (a < b) ? a : b;
 }
 
 template <>
-inline int sx_clamp(int v, int _min, int _max) {
+inline int sx_clamp(int v, int _min, int _max)
+{
     return sx_max(sx_min(v, _max), _min);
 }
 template <>
-inline float sx_clamp(float v, float _min, float _max) {
+inline float sx_clamp(float v, float _min, float _max)
+{
     return sx_max(sx_min(v, _max), _min);
 }
 template <>
-inline double sx_clamp(double v, double _min, double _max) {
+inline double sx_clamp(double v, double _min, double _max)
+{
     return sx_max(sx_min(v, _max), _min);
 }
 template <>
-inline int8_t sx_clamp(int8_t v, int8_t _min, int8_t _max) {
+inline int8_t sx_clamp(int8_t v, int8_t _min, int8_t _max)
+{
     return sx_max(sx_min(v, _max), _min);
 }
 template <>
-inline uint8_t sx_clamp(uint8_t v, uint8_t _min, uint8_t _max) {
+inline uint8_t sx_clamp(uint8_t v, uint8_t _min, uint8_t _max)
+{
     return sx_max(sx_min(v, _max), _min);
 }
 template <>
-inline int16_t sx_clamp(int16_t v, int16_t _min, int16_t _max) {
+inline int16_t sx_clamp(int16_t v, int16_t _min, int16_t _max)
+{
     return sx_max(sx_min(v, _max), _min);
 }
 template <>
-inline uint16_t sx_clamp(uint16_t v, uint16_t _min, uint16_t _max) {
+inline uint16_t sx_clamp(uint16_t v, uint16_t _min, uint16_t _max)
+{
     return sx_max(sx_min(v, _max), _min);
 }
 template <>
-inline uint32_t sx_clamp(uint32_t v, uint32_t _min, uint32_t _max) {
+inline uint32_t sx_clamp(uint32_t v, uint32_t _min, uint32_t _max)
+{
     return sx_max(sx_min(v, _max), _min);
 }
 template <>
-inline int64_t sx_clamp(int64_t v, int64_t _min, int64_t _max) {
+inline int64_t sx_clamp(int64_t v, int64_t _min, int64_t _max)
+{
     return sx_max(sx_min(v, _max), _min);
 }
 template <>
-inline uint64_t sx_clamp(uint64_t v, uint64_t _min, uint64_t _max) {
+inline uint64_t sx_clamp(uint64_t v, uint64_t _min, uint64_t _max)
+{
     return sx_max(sx_min(v, _max), _min);
 }
 

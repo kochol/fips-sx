@@ -2,12 +2,17 @@
 // Copyright 2018 Sepehr Taghdisian (septag@github). All rights reserved.
 // License: https://github.com/septag/sx#license-bsd-2-clause
 //
+// parts of this code is copied from bx library: https://github.com/bkaradzic/bx
+// Copyright 2011-2019 Branimir Karadzic. All rights reserved.
+// License: https://github.com/bkaradzic/bx#license-bsd-2-clause
+//
 // macros.h - v1.0 - Common portable helper macros
 // Many of these are stolen from: https://github.com/bkaradzic/bx/blob/master/include/bx/macros.h
 //      General rule is that function like macros are in camel_case
 //      and simple preprocessor/code annotations are in UPPER_CASE
 #pragma once
 
+#include "config.h"
 #include "platform.h"
 
 ///
@@ -15,8 +20,8 @@
     (((uint32_t)(_a) | ((uint32_t)(_b) << 8) | ((uint32_t)(_c) << 16) | ((uint32_t)(_d) << 24)))
 
 ///
-#define sx_stringize(_x) sx_stringize_(_x)
-#define sx_stringize_(_x) #_x
+#define _sx_stringize(_x) #_x
+#define sx_stringize(_x) _sx_stringize(_x)
 
 ///
 // Function decleration code helpers
@@ -54,6 +59,7 @@
 #    define SX_NO_INLINE __attribute__((noinline))
 #    define SX_NO_RETURN __attribute__((noreturn))
 #    define SX_CONSTFN __attribute__((const))
+#    define SX_RESTRICT __restrict__
 #    if SX_CRT_MSVC
 #        define __stdcall
 #    endif    // SX_CRT_MSVC
@@ -65,6 +71,7 @@
 #    define SX_NO_INLINE __declspec(noinline)
 #    define SX_NO_RETURN
 #    define SX_CONSTFN __declspec(noalias)
+#    define SX_RESTRICT __restrict
 #else
 #    error "Unknown SX_COMPILER_?"
 #endif
@@ -115,13 +122,29 @@
 #endif    // SX_COMPILER_
 
 #ifdef __cplusplus
-#    define SX_API extern "C"
+#    define _SX_EXTERN extern "C"
 #else
-#    define SX_API extern
+#    define _SX_EXTERN extern
 #endif
 
+#if SX_CONFIG_SHARED_LIB
+#    if SX_COMPILER_MSVC
+#        ifdef sx_EXPORTS
+#            define _SX_API_DECL __declspec(dllexport)
+#        else
+#            define _SX_API_DECL __declspec(dllimport)
+#        endif
+#    else
+#        define _SX_API_DECL __attribute__((visibility("default")))
+#    endif
+#else
+#    define _SX_API_DECL
+#endif
+
+#define SX_API _SX_EXTERN _SX_API_DECL
+
 #define sx_enabled(_f) ((_f) != 0)
-#define sx_unused(_a) (void)(true ? (void)0 : ((void)(_a)))
+#define sx_unused(_a) (void)(_a)
 
 #ifdef __cplusplus
 #    define sx_cppbool(_b) (_b) ? true : false;

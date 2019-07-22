@@ -30,7 +30,7 @@ Thumbs.db
 /.idea/workspace.xml
 /.idea/libraries
 /build
-/build-cpp
+/build-*
 /captures
 
 
@@ -42,6 +42,7 @@ imgui.ini
 install
 *.log
 .vscode
+compile_commands.json
 
 # Compiled binaries
 *.so

@@ -30,22 +30,25 @@
 
 typedef struct sx_alloc sx_alloc;
 
-typedef sx_align_decl(16, struct) sx__pool_page {
-    void**                ptrs;
-    uint8_t*              buff;
+typedef sx_align_decl(16, struct) sx__pool_page
+{
+    void** ptrs;
+    uint8_t* buff;
     struct sx__pool_page* next;
-    int                   iter;
+    int iter;
 }
 sx__pool_page;
 
-typedef sx_align_decl(16, struct) sx_pool {
-    int            item_sz;
-    int            capacity;
+typedef sx_align_decl(16, struct) sx_pool
+{
+    int item_sz;
+    int capacity;
     sx__pool_page* pages;
 }
 sx_pool;
 
-static inline sx__pool_page* sx__pool_create_page(sx_pool* pool, const sx_alloc* alloc) {
+static inline sx__pool_page* sx__pool_create_page(sx_pool* pool, const sx_alloc* alloc)
+{
     int capacity = pool->capacity;
     int item_sz = pool->item_sz;
 
@@ -63,12 +66,15 @@ static inline sx__pool_page* sx__pool_create_page(sx_pool* pool, const sx_alloc*
     buff += sizeof(void*) * capacity;
     page->buff = buff;
     page->next = NULL;
-    for (int i = 0; i < capacity; i++) page->ptrs[capacity - i - 1] = page->buff + i * item_sz;
+    for (int i = 0; i < capacity; i++) {
+        page->ptrs[capacity - i - 1] = page->buff + i * item_sz;
+    }
 
     return page;
 }
 
-static inline sx_pool* sx_pool_create(const sx_alloc* alloc, int item_sz, int capacity) {
+static inline sx_pool* sx_pool_create(const sx_alloc* alloc, int item_sz, int capacity)
+{
     sx_assert(item_sz > 0 && "Item size should not be zero");
 
     capacity = sx_align_mask(capacity, 15);
@@ -92,12 +98,15 @@ static inline sx_pool* sx_pool_create(const sx_alloc* alloc, int item_sz, int ca
     buff += sizeof(void*) * capacity;
     page->buff = buff;
     page->next = NULL;
-    for (int i = 0; i < capacity; i++) page->ptrs[capacity - i - 1] = page->buff + i * item_sz;
+    for (int i = 0; i < capacity; i++) {
+        page->ptrs[capacity - i - 1] = page->buff + i * item_sz;
+    }
 
     return pool;
 }
 
-static inline void sx_pool_destroy(sx_pool* pool, const sx_alloc* alloc) {
+static inline void sx_pool_destroy(sx_pool* pool, const sx_alloc* alloc)
+{
     sx_assert(pool);
     sx_assert(pool->pages);
 
@@ -113,7 +122,8 @@ static inline void sx_pool_destroy(sx_pool* pool, const sx_alloc* alloc) {
     sx_aligned_free(alloc, pool, 16);
 }
 
-static inline void* sx_pool_new(sx_pool* pool) {
+static inline void* sx_pool_new(sx_pool* pool)
+{
     sx__pool_page* page = pool->pages;
     while (page->iter == 0 && page->next) page = page->next;
 
@@ -125,7 +135,8 @@ static inline void* sx_pool_new(sx_pool* pool) {
     }
 }
 
-static inline bool sx_pool_grow(sx_pool* pool, const sx_alloc* alloc) {
+static inline bool sx_pool_grow(sx_pool* pool, const sx_alloc* alloc)
+{
     sx__pool_page* page = sx__pool_create_page(pool, alloc);
     if (page) {
         sx__pool_page* last = pool->pages;
@@ -137,7 +148,8 @@ static inline bool sx_pool_grow(sx_pool* pool, const sx_alloc* alloc) {
     }
 }
 
-static inline bool sx_pool_full(const sx_pool* pool) {
+static inline bool sx_pool_full(const sx_pool* pool)
+{
     sx__pool_page* page = pool->pages;
     while (page) {
         if (page->iter > 0)
@@ -148,7 +160,8 @@ static inline bool sx_pool_full(const sx_pool* pool) {
 }
 
 // same as sx_pool_full, but check wether we can have N instances
-static inline bool sx_pool_fulln(const sx_pool* pool, int n) {
+static inline bool sx_pool_fulln(const sx_pool* pool, int n)
+{
     sx__pool_page* page = pool->pages;
     while (page) {
         if ((page->iter - n) >= 0)
@@ -158,11 +171,12 @@ static inline bool sx_pool_fulln(const sx_pool* pool, int n) {
     return true;
 }
 
-static inline bool sx_pool_valid_ptr(const sx_pool* pool, void* ptr) {
-    uintptr_t      uptr = (uintptr_t)ptr;
+static inline bool sx_pool_valid_ptr(const sx_pool* pool, void* ptr)
+{
+    uintptr_t uptr = (uintptr_t)ptr;
     sx__pool_page* page = pool->pages;
-    int            item_sz = pool->item_sz;
-    int            capacity = pool->capacity;
+    int item_sz = pool->item_sz;
+    int capacity = pool->capacity;
     while (page) {
         bool inbuf =
             uptr >= (uintptr_t)page->buff && uptr < (uintptr_t)(page->buff + capacity * item_sz);
@@ -174,11 +188,12 @@ static inline bool sx_pool_valid_ptr(const sx_pool* pool, void* ptr) {
     return false;
 }
 
-static inline void sx_pool_del(sx_pool* pool, void* ptr) {
-    uintptr_t      uptr = (uintptr_t)ptr;
+static inline void sx_pool_del(sx_pool* pool, void* ptr)
+{
+    uintptr_t uptr = (uintptr_t)ptr;
     sx__pool_page* page = pool->pages;
-    int            item_sz = pool->item_sz;
-    int            capacity = pool->capacity;
+    int item_sz = pool->item_sz;
+    int capacity = pool->capacity;
 
     while (page) {
         if (uptr >= (uintptr_t)page->buff && uptr < (uintptr_t)(page->buff + capacity * item_sz)) {
