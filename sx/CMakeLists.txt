@@ -212,8 +212,8 @@ target_include_directories(sx PUBLIC
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 if (ANDROID)
-    include(AndroidNdkModules)
-    android_ndk_import_module_cpufeatures()
+    include_directories(${ANDROID_NDK}/sources/android/cpufeatures)
+    add_library(cpufeatures ${ANDROID_NDK}/sources/android/cpufeatures/cpu-features.c)
     target_link_libraries(sx PUBLIC dl m PRIVATE cpufeatures)
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     target_link_libraries(sx PUBLIC dl pthread m)
