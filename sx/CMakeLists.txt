@@ -36,7 +36,8 @@ fips_begin_lib(sx)
     endfunction()
 
     set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-    option(SX_BUILD_TESTS "Build test executables" FALSE)
+    option(SX_BUILD_TESTS "Build test executables" OFF)
+option(SX_SHARED_LIB "Build shared library (.so/.dll/.dylib)" OFF)
 
     # Enable Assembler
     if (MSVC)
@@ -65,7 +66,8 @@ fips_begin_lib(sx)
                     src/math.c 
                     src/jobs.c
                     src/bheap.c
-                    src/tlsf-alloc.c)
+                    src/tlsf-alloc.c
+	            src/ringbuffer.c)
     set(INCLUDE_FILES include/sx/allocator.h
                     include/sx/array.h 
                     include/sx/config.h 
@@ -91,7 +93,9 @@ fips_begin_lib(sx)
                     include/sx/math.h
                     include/sx/jobs.h
                     include/sx/bheap.h
-                    include/sx/tlsf-alloc.h)
+                    include/sx/tlsf-alloc.h
+                    include/sx/simd.h
+                    include/sx/ringbuffer.h)
 
     # Remove fiber functions for now on emscripten
     if (FIPS_EMSCRIPTEN)
@@ -109,12 +113,9 @@ fips_begin_lib(sx)
         # Apple comboned, include based on arch
         set(CPU_ARCH "combined")
         set(ASM_EXT "all_macho_gas.S")
-    elseif (ANDROID)
-        include_directories(${ANDROID_NDK}/sources/android/cpufeatures)
-        add_library(cpufeatures ${ANDROID_NDK}/sources/android/cpufeatures/cpu-features.c)
-        target_link_libraries(cpufeatures dl)
+    elseif (ANDROID OR RPI)
         # Android (Arm/x86_64/Arm64)
-        if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
+        if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm" OR RPI)
             set(CPU_ARCH "arm")
             set(ASM_EXT "aapcs_elf_gas.S")
         elseif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64")
@@ -149,10 +150,12 @@ fips_begin_lib(sx)
                     "asm/jump_${CPU_ARCH}_${ASM_EXT}"
                     "asm/ontop_${CPU_ARCH}_${ASM_EXT}")
     set_source_files_properties(${ASM_SOURCES} PROPERTIES COMPILE_DEFINITIONS BOOST_CONTEXT_EXPORT=)
+if (WIN32 AND CMAKE_SIZEOF_VOID_P EQUAL 4) 
+    set_source_files_properties(${ASM_SOURCES} PROPERTIES COMPILE_OPTIONS /safeseh)
+endif()
 
     if (FIPS_EMSCRIPTEN) 
         unset(ASM_SOURCES)
-        add_compile_options(-Wsign-compare)
     endif()
     ####################################################################################################
 
@@ -164,6 +167,13 @@ fips_begin_lib(sx)
         add_definitions(-D_HAS_EXCEPTIONS=0)
         add_definitions(-D_CRT_SECURE_NO_WARNINGS=0)
     endif()
+if (RPI)
+    add_definitions(-D__RPI__)
+endif()
+if (SX_SHARED_LIB)
+    add_definitions(-DSX_CONFIG_SHARED_LIB=1)
+    set(LIB_TYPE SHARED)
+endif()
 
     if ((CMAKE_C_COMPILER_ID MATCHES "Clang") OR (CMAKE_C_COMPILER_ID MATCHES "GNU"))
         add_compile_options(-nostdlib -Wno-deprecated-declarations)
@@ -198,14 +208,19 @@ elseif(APPLE)
     endif()
 endif()
 
-target_include_directories(sx PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${COMPAT_DIR})
+include(GNUInstallDirs)
+
+target_include_directories(sx PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
+    $<BUILD_INTERFACE:${COMPAT_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 if (ANDROID)
-    target_link_libraries(sx PUBLIC dl pthread m cpufeatures)
+    include(AndroidNdkModules)
+    android_ndk_import_module_cpufeatures()
+    target_link_libraries(sx PUBLIC dl m PRIVATE cpufeatures)
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     target_link_libraries(sx PUBLIC dl pthread m)
-elseif (APPLE)
-    target_link_libraries(sx PUBLIC "-framework Foundation")
 elseif (WIN32)
     target_link_libraries(sx PUBLIC psapi)
 endif()
