@@ -37,7 +37,7 @@ fips_begin_lib(sx)
 
     set_property(GLOBAL PROPERTY USE_FOLDERS ON)
     option(SX_BUILD_TESTS "Build test executables" OFF)
-option(SX_SHARED_LIB "Build shared library (.so/.dll/.dylib)" OFF)
+    option(SX_SHARED_LIB "Build shared library (.so/.dll/.dylib)" OFF)
 
     # Enable Assembler
     if (MSVC)
@@ -67,7 +67,7 @@ option(SX_SHARED_LIB "Build shared library (.so/.dll/.dylib)" OFF)
                     src/jobs.c
                     src/bheap.c
                     src/tlsf-alloc.c
-	            src/ringbuffer.c)
+	                src/ringbuffer.c)
     set(INCLUDE_FILES include/sx/allocator.h
                     include/sx/array.h 
                     include/sx/config.h 

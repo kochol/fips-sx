@@ -1,13 +1,18 @@
 #
 # project: fips-sx
 #
-cmake_minimum_required(VERSION 3.0)
 
-# include the fips main cmake file
-get_filename_component(FIPS_ROOT_DIR "../fips" ABSOLUTE)
-include("${FIPS_ROOT_DIR}/cmake/fips.cmake")
+if (NOT FIPS_IMPORT)
+    cmake_minimum_required(VERSION 3.0)
+    # include the fips main cmake file
+    get_filename_component(FIPS_ROOT_DIR "../fips" ABSOLUTE)
+    include("${FIPS_ROOT_DIR}/cmake/fips.cmake")
 
-fips_setup()
-fips_project(fips-sx)
+    fips_setup(PROJECT fips-sx)
+endif()
+
 fips_add_subdirectory(sx)
-fips_finish()
+
+if (NOT FIPS_IMPORT)
+    fips_finish()
+endif()
