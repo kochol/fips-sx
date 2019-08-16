@@ -2028,6 +2028,11 @@ static inline sx_vec3 operator*(float k, const sx_vec3& v)
     return sx_vec3_mulf(v, k);
 }
 
+static inline bool operator==(const sx_vec3& lhs, const sx_vec3& rhs)
+{
+    return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
+}
+
 static inline sx_mat4 operator*(const sx_mat4& a, const sx_mat4& b)
 {
     return sx_mat4_mul(&a, &b);
@@ -2042,6 +2047,12 @@ static inline sx_quat operator*(const sx_quat& a, const sx_quat& b)
 {
     return sx_quat_mul(a, b);
 }
+
+static inline bool operator==(const sx_quat& lhs, const sx_quat& rhs)
+{
+    return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z && lhs.w == rhs.w;
+}
+
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
