@@ -67,7 +67,8 @@ fips_begin_lib(sx)
                     src/jobs.c
                     src/bheap.c
                     src/tlsf-alloc.c
-	                src/ringbuffer.c)
+                    src/ringbuffer.c
+	            src/lockless.c)
     set(INCLUDE_FILES include/sx/allocator.h
                     include/sx/array.h 
                     include/sx/config.h 
@@ -95,7 +96,10 @@ fips_begin_lib(sx)
                     include/sx/bheap.h
                     include/sx/tlsf-alloc.h
                     include/sx/simd.h
-                    include/sx/ringbuffer.h)
+                    include/sx/ringbuffer.h
+                    include/sx/lockless.h 
+                    include/sx/linear-buffer.h 
+                    include/sx/bitarray.h)
 
     # Remove fiber functions for now on emscripten
     if (FIPS_EMSCRIPTEN)
@@ -171,13 +175,13 @@ if (SX_SHARED_LIB)
     set(LIB_TYPE SHARED)
 endif()
 
-    if ((CMAKE_C_COMPILER_ID MATCHES "Clang") OR (CMAKE_C_COMPILER_ID MATCHES "GNU"))
-        add_compile_options(-nostdlib -Wno-deprecated-declarations)
+if (CMAKE_C_COMPILER_ID MATCHES "Clang" AND MSVC AND NOT CLANG_CL)
+    set(CLANG_CL 1 CACHE INTERNAL BOOl "")
+    message(STATUS "using clang-cl compiler")
+endif()
 
-        # MSVC + Clang_C2
-        if (MSVC)
-            add_compile_options("$<$<CONFIG:Debug>:-g>")
-        endif()
+if (NOT CLANG_CL AND (CMAKE_C_COMPILER_ID MATCHES "Clang") OR (CMAKE_C_COMPILER_ID MATCHES "GNU"))
+    add_compile_options(-nostdlib -Wno-deprecated-declarations)
         add_compile_options("$<$<CONFIG:Debug>:-D_DEBUG>")
         add_compile_options("$<$<CONFIG:Release>:-DNDEBUG>")
         
@@ -214,7 +218,7 @@ target_include_directories(sx PUBLIC
 if (ANDROID)
     include_directories(${ANDROID_NDK}/sources/android/cpufeatures)
     add_library(cpufeatures ${ANDROID_NDK}/sources/android/cpufeatures/cpu-features.c)
-    target_link_libraries(sx PUBLIC dl m PRIVATE cpufeatures)
+    target_link_libraries(sx PUBLIC dl m PRIVATE cpufeatures log)
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     target_link_libraries(sx PUBLIC dl pthread m)
 elseif (WIN32)
@@ -225,5 +229,3 @@ endif()
 if (SX_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
-
-
