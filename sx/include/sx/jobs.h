@@ -117,9 +117,8 @@ typedef enum sx_job_priority {
 } sx_job_priority;
 
 typedef struct sx_job_context_desc {
-    int num_threads;    // number of worker threads to spawn (default: num_cpu_cores-1)
-    int max_fibers;     // maximum fibers that are allowed to be active at the same time (default:
-                        // 64)
+    int num_threads;    // number of worker threads to spawn,exclude main (default: num_cpu_cores-1)
+    int max_fibers;     // maximum fibers that are can be running at the same time (default: 64)
     int fiber_stack_sz;                               // fiber stack size (default: 1mb)
     sx_job_thread_init_cb* thread_init_cb;            // callback function that will be called on
                                                       // initiaslization of each worker thread
@@ -133,7 +132,7 @@ SX_API sx_job_context* sx_job_create_context(const sx_alloc* alloc,
 SX_API void sx_job_destroy_context(sx_job_context* ctx, const sx_alloc* alloc);
 
 SX_API sx_job_t sx_job_dispatch(sx_job_context* ctx, int count, sx_job_cb* callback, void* user,
-                                sx_job_priority priority sx_default(SX_JOB_PRIORITY_HIGH),
+                                sx_job_priority priority sx_default(SX_JOB_PRIORITY_NORMAL),
                                 unsigned int tags sx_default(0));
 SX_API void sx_job_wait_and_del(sx_job_context* ctx, sx_job_t job);
 SX_API bool sx_job_test_and_del(sx_job_context* ctx, sx_job_t job);

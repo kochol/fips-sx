@@ -169,7 +169,7 @@ static inline void sx__job_remove_list(sx__job** pfirst, sx__job** plast, sx__jo
     node->prev = node->next = NULL;
 }
 
-typedef struct sx__job_select_result {
+typedef struct sx__job_select_result {  
     sx__job* job;
     bool waiting_list_alive;
 } sx__job_select_result;
@@ -177,12 +177,10 @@ typedef struct sx__job_select_result {
 
 static sx__job_select_result sx__job_select(sx_job_context* ctx, uint32_t tid, uint32_t tags)
 {
-    sx__job_select_result r;
-    r.job = NULL;
-    r.waiting_list_alive = false;
-
+    sx__job_select_result r = { 0 };
+    
     sx_lock(&ctx->job_lk);
-    for (int pr = 0; pr < SX_JOB_PRIORITY_COUNT && !r.job; pr++) {
+    for (int pr = 0; pr < SX_JOB_PRIORITY_COUNT; pr++) {
         sx__job* node = ctx->waiting_list[pr];
         while (node) {
             r.waiting_list_alive = true;
@@ -394,6 +392,7 @@ static void sx__job_process_pending(sx_job_context* ctx)
 
 static void sx__job_process_pending_single(sx_job_context* ctx, int index)
 {
+    sx_lock(&ctx->job_lk);
     // unlike sx__job_process_pending, only check the specific index to push into job-list
     sx__job_pending pending = ctx->pending[index];
     if (!sx_pool_fulln(ctx->job_pool, *pending.counter)) {
@@ -416,6 +415,7 @@ static void sx__job_process_pending_single(sx_job_context* ctx, int index)
         }
         sx_semaphore_post(&ctx->sem, count);
     }
+    sx_unlock(&ctx->job_lk);
 }
 
 void sx_job_wait_and_del(sx_job_context* ctx, sx_job_t job)
@@ -425,14 +425,12 @@ void sx_job_wait_and_del(sx_job_context* ctx, sx_job_t job)
     sx_compiler_read_barrier();
     while (*job > 0) {
         // check if the current job is the pending list
-        sx_lock(&ctx->job_lk);
         for (int i = 0, c = sx_array_count(ctx->pending); i < c; i++) {
             if (ctx->pending[i].counter == job) {
                 sx__job_process_pending_single(ctx, i);
                 break;
             }
         }
-        sx_unlock(&ctx->job_lk);
 
         // If thread is running a job, make it slave to the thread so it can only be picked up by
         // this thread And push the job back to waiting_list
@@ -501,7 +499,7 @@ static sx__job_thread_data* sx__job_create_tdata(const sx_alloc* alloc, uint32_t
     tdata->tags = 0xffffffff;
     tdata->main_thrd = main_thrd;
 
-    bool r = sx_fiber_stack_init(&tdata->selector_stack, sx_os_minstacksz());
+    bool r = sx_fiber_stack_init(&tdata->selector_stack, (int)sx_os_minstacksz());
     sx_assert(r && "Not enough memory for temp stacks");
     sx_unused(r);
 
@@ -522,6 +520,7 @@ static int sx__job_thread_fn(void* user1, void* user2)
     uint32_t thread_id = sx_thread_tid();
 
     // Create thread data
+    // note: thread index #0 is reserved for main thread
     sx__job_thread_data* tdata = sx__job_create_tdata(ctx->alloc, thread_id, index + 1, false);
     if (!tdata) {
         sx_assert(tdata && "ThreadData create failed!");
@@ -581,8 +580,8 @@ sx_job_context* sx_job_create_context(const sx_alloc* alloc, const sx_job_contex
     sx_memset(ctx->job_pool->pages->buff, 0x0, sizeof(sx__job) * max_fibers);
 
     // keep tags in an array for evaluating num_jobs
-    ctx->tags = sx_malloc(alloc, sizeof(uint32_t) * (ctx->num_threads + 1));
-    sx_memset(ctx->tags, 0xff, sizeof(uint32_t) * (ctx->num_threads + 1));
+    ctx->tags = sx_malloc(alloc, sizeof(uint32_t) * ((size_t)ctx->num_threads + 1));
+    sx_memset(ctx->tags, 0xff, sizeof(uint32_t) * ((size_t)ctx->num_threads + 1));
 
     // Worker threads
     if (ctx->num_threads > 0) {
@@ -592,7 +591,7 @@ sx_job_context* sx_job_create_context(const sx_alloc* alloc, const sx_job_contex
         for (int i = 0; i < ctx->num_threads; i++) {
             char name[32];
             sx_snprintf(name, sizeof(name), "sx_job_thread(%d)", i + 1);
-            ctx->threads[i] = sx_thread_create(alloc, sx__job_thread_fn, ctx, sx_os_minstacksz(),
+            ctx->threads[i] = sx_thread_create(alloc, sx__job_thread_fn, ctx, (int)sx_os_minstacksz(),
                                                name, (void*)(intptr_t)i);
             sx_assert(ctx->threads[i] && "sx_thread_create failed!");
         }
