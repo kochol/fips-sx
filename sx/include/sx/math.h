@@ -2011,6 +2011,11 @@ static inline sx_vec2 operator*(const sx_vec2& v0, const sx_vec2& v1)
     return sx_vec2_mul(v0, v1);
 }
 
+static inline bool operator==(const sx_vec2& lhs, const sx_vec2& rhs)
+{
+    return lhs.x == rhs.x && lhs.y == rhs.y;
+}
+
 static inline sx_ivec2 operator+(const sx_ivec2& a, const sx_ivec2& b)
 {
     return sx_ivec2_add(a, b);
@@ -2019,6 +2024,11 @@ static inline sx_ivec2 operator+(const sx_ivec2& a, const sx_ivec2& b)
 static inline sx_ivec2 operator-(const sx_ivec2& a, const sx_ivec2& b)
 {
     return sx_ivec2_sub(a, b);
+}
+
+static inline bool operator==(const sx_ivec2& lhs, const sx_ivec2& rhs)
+{
+    return lhs.x == rhs.x && lhs.y == rhs.y;
 }
 
 static inline sx_vec3 operator+(const sx_vec3& v1, const sx_vec3& v2)
