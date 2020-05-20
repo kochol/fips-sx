@@ -451,10 +451,13 @@ void sx_job_wait_and_del(sx_job_context* ctx, sx_job_t job)
                 sx_semaphore_post(&ctx->sem, 1);
         }
 
-        sx_fiber_switch(tdata->selector_fiber, ctx);    // Switch to selector loop
+        if (!tdata->main_thrd) {
+            sx_fiber_switch(tdata->selector_fiber, ctx);    // Switch to selector loop
 
-        if (!tdata->selector_fiber) {
-            tdata->selector_fiber = sx_fiber_create(tdata->selector_stack, sx__job_selector_main_thrd);
+            if (!tdata->selector_fiber) {
+                tdata->selector_fiber =
+                    sx_fiber_create(tdata->selector_stack, sx__job_selector_main_thrd);
+            }
         }
 
         uint64_t now_tm = sx_cycle_clock();
