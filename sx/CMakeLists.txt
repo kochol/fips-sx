@@ -40,7 +40,7 @@ fips_begin_lib(sx)
     option(SX_SHARED_LIB "Build shared library (.so/.dll/.dylib)" OFF)
 
     # Enable Assembler
-    if (MSVC)
+if (MSVC AND NOT CMAKE_C_COMPILER_ID MATCHES "Clang")
         enable_language(CXX ASM_MASM)
     else()
         enable_language(CXX ASM)
@@ -51,7 +51,6 @@ fips_begin_lib(sx)
                     src/threads.c
                     src/lin-alloc.c
                     src/hash.c
-                    src/stack-alloc.c
                     src/os.c 
                     src/string.c
                     src/io.c
@@ -61,14 +60,13 @@ fips_begin_lib(sx)
                     src/timer.c
                     src/rng.c
                     src/ini.c
-                    src/virtual-alloc.c
+                 src/vmem.c
                     src/fiber.c
                     src/math.c 
                     src/jobs.c
                     src/bheap.c
-                    src/tlsf-alloc.c
                     src/ringbuffer.c
-	            	src/lockless.c)
+	            src/lockless.c)
     set(INCLUDE_FILES include/sx/allocator.h
                     include/sx/array.h 
                     include/sx/config.h 
@@ -79,7 +77,6 @@ fips_begin_lib(sx)
                     include/sx/threads.h
                     include/sx/lin-alloc.h
                     include/sx/hash.h
-                    include/sx/stack-alloc.h
                     include/sx/os.h 
                     include/sx/string.h
                     include/sx/handle.h
@@ -89,12 +86,15 @@ fips_begin_lib(sx)
                     include/sx/timer.h
                     include/sx/rng.h
                     include/sx/ini.h
-                    include/sx/virtual-alloc.h 
+                    include/sx/vmem.h 
                     include/sx/fiber.h
                     include/sx/math.h
+	            include/sx/math-types.h 
+                    include/sx/math-scalar.h 
+                    include/sx/math-vec.h 
+                    include/sx/math-easing.h
                     include/sx/jobs.h
                     include/sx/bheap.h
-                    include/sx/tlsf-alloc.h
                     include/sx/simd.h
                     include/sx/ringbuffer.h
                     include/sx/lockless.h 
@@ -143,15 +143,21 @@ fips_begin_lib(sx)
 		else()
 			set(CPU_ARCH "i386")
 		endif()
-		set(ASM_EXT "ms_pe_masm.asm")
-	endif()
+    	if (CMAKE_C_COMPILER_ID MATCHES "Clang")
+        	set(ASM_EXT "ms_pe_clang_gas.S")
+	elseif (MSVC)
+        	set(ASM_EXT "ms_pe_masm.asm")
+    	elseif (CMAKE_C_COMPILER_ID MATCHES "GNU")
+        	set(ASM_EXT "ms_pe_gas.S")
+    	endif()
+endif()
 
     set(ASM_SOURCES "asm/make_${CPU_ARCH}_${ASM_EXT}"
                     "asm/jump_${CPU_ARCH}_${ASM_EXT}"
                     "asm/ontop_${CPU_ARCH}_${ASM_EXT}")
     set_source_files_properties(${ASM_SOURCES} PROPERTIES COMPILE_DEFINITIONS BOOST_CONTEXT_EXPORT=)
 	
-	if (WIN32 AND CMAKE_SIZEOF_VOID_P EQUAL 4) 
+if (WIN32 AND (CMAKE_SIZEOF_VOID_P EQUAL 4) AND MSVC) 
     	set_source_files_properties(${ASM_SOURCES} PROPERTIES COMPILE_OPTIONS /safeseh)
 	endif()
 
@@ -194,7 +200,11 @@ fips_begin_lib(sx)
     elseif (MSVC) 
         sx_remove_compile_options(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" "/EHsc /GR")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GR-")
+    if (${MSVC_VERSION} GREATER_EQUAL 1928)
+        message(STATUS "MSVC compiler supports C17 standard")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /std:c17")
     endif()
+endif()
     
     fips_files(${SOURCE_FILES} ${INCLUDE_FILES} ${ASM_SOURCES})
 
@@ -203,6 +213,8 @@ fips_end_lib(sx)
 # compat files include dir
 if (MSVC)
    	set(COMPAT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/compat/msvc)
+elseif (WIN32 AND (CMAKE_C_COMPILER_ID MATCHES "GNU"))
+    set(COMPAT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/compat/mingw)
 elseif(APPLE)
     if (IOS)
         set(COMPAT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/compat/ios)
