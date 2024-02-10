@@ -60,19 +60,18 @@ SX_API char* sx_os_path_unixpath(char* dst, int size, const char* path);
 SX_API char* sx_os_path_winpath(char* dst, int size, const char* path);
 SX_API char* sx_os_path_basename(char* dst, int size, const char* path);
 SX_API char* sx_os_path_dirname(char* dst, int size, const char* path);
-SX_API char* sx_os_path_splitext(char* ext, int ext_size, char* basename, int basename_size,
-                                 const char* path);
+SX_API char* sx_os_path_splitext(char* ext, int ext_size, char* basename, int basename_size, const char* path);
 SX_API char* sx_os_path_ext(char* dst, int size, const char* path);
 SX_API char* sx_os_path_join(char* dst, int size, const char* path_a, const char* path_b);
 SX_API char* sx_os_path_normcase(char* dst, int size, const char* path);
 SX_API char* sx_os_path_normpath(char* dst, int size, const char* path);
-SX_API char* sx_os_path_relpath(char* dst, int size, const char* path,
-                                const char* start sx_default(NULL));
+SX_API char* sx_os_path_relpath(char* dst, int size, const char* path, const char* start sx_default(NULL));
 SX_API bool sx_os_path_exists(const char* path);
 SX_API bool sx_os_path_isfile(const char* path);
 SX_API bool sx_os_path_isdir(const char* path);
 SX_API char* sx_os_path_exepath(char* dst, int size);
+SX_API uint32_t sx_os_getpid(void);
 
 SX_API sx_file_info sx_os_stat(const char* filepath);
 
-SX_API int sx_os_numcores();
+SX_API int sx_os_numcores(void);

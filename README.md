@@ -16,7 +16,7 @@ Inspired by the works of [Sean Barret](https://github.com/nothings), [Branimir K
 This library currently contains these functionalities (listed by header files):
 
 - [allocator.h](include/sx/allocator.h): basic memory allocation functions and default heap/leak_check allocators. 
-- [array.h](include/sx/array.h): [stretchy_buffer](https://github.com/nothings/stb/blob/master/stretchy_buffer.h) implementation
+- [array.h](include/sx/array.h): [stretchy_buffer](https://github.com/nothings/stb/blob/master/stretchy_buffer.h) implementation. Also contains a very thin C++ template wrapper over array macros for C++ users.
 - [atomic.h](include/sx/atomic.h): Set of portable atomic types and functions like CAS/Exchange/Incr/etc. plus a minimal spinlock implementation.
 - [cmdline.h](include/sx/cmdline.h): wrapper over [getopt](https://github.com/wc-duck/getopt) - getopt command line parser
 - [fiber.h](include/sx/fiber.h): Portable fibers and coroutines, Assembly backend implementation taken from _de-boostified_ project [deboost.context](https://github.com/septag/deboost.context)
@@ -30,14 +30,13 @@ This library currently contains these functionalities (listed by header files):
 	- Overriadable thread init and shutdown. To initialize your own stuff on each thread
 	- Support for tags: each worker thread can be tagged to handle specific class of jobs
 - [handle.h](include/sx/handle.h): Handle pool. sparse/dense handle allocator to address array items with handles instead of pointers. With generation counters for validating dead handles.
-- [hash.h](include/sx/hash.h):  Some nice hash functions (xxhash/crc32/fnv1a) and a fast fibonacci multiplicative hash-table
+- [hash.h](include/sx/hash.h):  Some nice hash functions (xxhash/crc32/fnv1a) and a fast fibonacci multiplicative hash-table. Contains a very thin C++ template wrapper for sx_hashtbltval.
 - [ini.h](include/sx/ini.h): INI file encoder/decoder. wrapper over [ini.h](https://github.com/mattiasgustavsson/libs/blob/master/ini.h)
 - [io.h](include/sx/io.h): Read and write to/from memory and file streams
 - [lin-alloc.h](include/sx/lin-alloc.h): Generic linear allocator
 - [platform.h](include/sx/platform.h): Platform and compiler detection macros, taken from [bx](https://github.com/bkaradzic/bx)
 - [pool.h](include/sx/pool.h): Self-contained pool allocator
 - [rng.h](include/sx/rng.h): Random number generators. Currently only implementation is PCG.
-- [stack-alloc.h](include/sx/stack-alloc.h): Generic linear stack based allocator
 - [string.h](include/sx/string.h): Useful C-style string functions including Sean barret's [stb_printf](http://github.com/nothings/stb) implementation. Plus string pool implementation from [mattias](https://github.com/mattiasgustavsson/libs/blob/master/strpool.h)
 - [threads.h](include/sx/threads.h): Portable threading primitives:
 	- Thread
@@ -47,14 +46,15 @@ This library currently contains these functionalities (listed by header files):
 	- Signal
 - [timer.h](include/sx/timer.h): Portable high-res timer, wrapper over [sokol_time](https://github.com/floooh/sokol)
 - [vmem.h](include/sx/vmem.h): Page based virtual memory allocator
-- [math.h](include/sx/math.h): 
-	- Standard floating-point
-	- Vector (2,3,4)
-	- Matrix (3x3, 4x4)
-	- Quaternion
-	- Easing functions
-	- AABB
-	- Color (RGBA 4 unsigned bytes)
+- [math.h](include/sx/math.h): The math library is divided into multiple parts, the main typedefs are in _math-types.h_
+	- Standard floating-point and constants: _math-scalar.h_
+	- Vector (2,3,4): _math-vec.h_
+	- Matrix (3x3, 4x4): _math-vec.h_
+	- Quaternion: _math-vec.h_
+	- Easing functions: _math-easing.h_
+	- AABB: _math-vec.h_
+	- Color (RGBA 4 unsigned bytes): _math-vec.h_
+	- Cpp operator overrides: _math-vec.h_
 - [os.h](include/sx/os.h): Common portable OS related routines
 	- Basic system information like available memory and cpu cores count
 	- Shared library management
@@ -65,10 +65,23 @@ This library currently contains these functionalities (listed by header files):
 - [ringbuffer.h](include/sx/ringbuffer.h): Basic ring-buffer (circular buffer)
 - [lockless.h](include/sx/lockless.h): lockless data structures. 
   - Self-contained single-producer-single-consumer queue
-- [linear-buffer.h](include/sx/linear-buffer.h): Helper custom memory allocator useful for allocating structures with arrays of data in a single allocation call
+- [linear-buffer.h](include/sx/linear-buffer.h): Helper custom memory allocator useful for allocating structures with arrays of data in a single allocation call. Includes a thin C++ template over it's C-API.
 - [bitarray.h](include/sx/bitarray.h): utility data structure to hold arbitary number of bits
 
 ## Changes
+### v1.1.0 (Nov 2020)
+- Divided math lib into multiple headers. _math.h_ still contains all of the math lib, but to improve build times, you can use _math-types.h_ in your headers and include their specific headers in sources.
+- MinGW build support
+- Faster Sqrt/rsqrt on CPUs with SSE2
+- Many math improvements and fixes
+- Assert improvements. Besides `sx_assert`, you have `sx_assertf` and `sx_assert_alwaysf` to output (potentially log) error messages with them.
+- Memory allocation fail callback: Added `sx_mem_fail_cb` callback registration to override out-of-memory errors
+- [BREAKING] IFF file writer/reader improvements and API changes (see io.h)
+- _addref_ for memory blocks to add reference count
+- [BREAKING] Removed stack-allocator. Use linear-allocator instead
+- Fixed minor bug in jobs.h for job-selector
+- Better inline implementations. Now many math functions are FORCE_INLINE, you can also use `/Ob1` flag in msvc + DEBUG builds  and set `SX_CONFIG_FORCE_INLINE_DEBUG=1` to force those functions to be inlined and leave others be. Very useful for improving debug runtime performance.
+
 ### v1.0.0 (May 2020)
 - [BREAKING]: Removed `virtual-alloc.h` and replaced it with the new `vmem.h`. virtual-alloc was not Suitable for general memory allocator. So I ditched it completely and replaced with a cleaner, better virtual memory allocation scheme. which is page based
 - [BREAKING]: Removed `tlsf-alloc` and all of it's dependencies. In order to cut the maintainable code and reduce repo size. I decided to remove this and leave it for the user to use the open-source [tlsf allocator](https://github.com/mattconte/tlsf). 
@@ -106,9 +119,6 @@ These are also the macros that you can override in _config.h_ or add them to com
 - **sx_memcmp**: Memory compare replacement, default is clib's _memcmp_
 - **sx_memmove**: Memory move replacement, default is clib's _memmove_
 
-### Windows
-Some C feautures on MSVC's C-compiler is missing, the code can be compiled as cpp also (/TP). It's also compatible with *MSVC + clang_c2* toolset which in that case you have to add the ```-T v140_clang_c2``` switch to cmake command (vs2015)
-
 ### Emscripten
 
 It can be built on emscripten (using the _Emscripten.cmake_ toolchain) with some limitations:
@@ -116,6 +126,17 @@ It can be built on emscripten (using the _Emscripten.cmake_ toolchain) with some
 - _threads.h_: support is not yet implemented, blocking primitives like signals and semaphores doesn't seem to work on this platform. Support maybe added in future.
 - _fibers.h_: Emscripten doesn't seem to support boost's assembly fibers which I'm currently using, however it is possible to implement async functions using emscripten API, which I'll try to implement in the future.
 - _virtual-alloc.h_: Virtual memory allocation functions does not seem to be working, it works like normal malloc, where reserving just pre-allocates all required memory
+
+## Links
+Here are some other mini C system libraries (mostly single headers) that you might find useful:
+
+- [sokol](https://github.com/floooh/sokol): Simple STB-style cross-platform libraries for C and C++, written in C. (graphics, sound, application, etc)
+- [cj5](https://github.com/septag/cj5): Very minimal single header JSON5 parser in C99, derived from jsmn
+- [dmon](https://github.com/septag/dmon): dmon is a tiny C library that monitors changes in a directory. It provides a unified solution to multiple system APIs that exist for each OS. It can also monitor directories recursively.
+- [dds-ktx](https://github.com/septag/dds-ktx): Portable single header DDS/KTX reader for C/C++
+- [cr](https://github.com/fungos/cr): A single file header-only live reload solution for C
+- [stackwalkerc](https://github.com/septag/stackwalkerc): Windows single header stack walker in C 
+- [sjson](https://github.com/septag/sjson): Fast and portable C single header json Encoder/Decoder
 
 
 [License (BSD 2-clause)](https://github.com/septag/sx/blob/master/LICENSE)
