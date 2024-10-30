@@ -239,7 +239,7 @@ sx_pinfo sx_os_exec(const char* const* argv)
     if (0 == pid) {
         int result = execvp(argv[0], (char* const*)(&argv[1]));
         sx_unused(result);
-        return (sx_pinfo){ 0 };
+        return (sx_pinfo){ pid };
     }
 
     return (sx_pinfo){ .linux_pid = (uintptr_t)pid };
@@ -280,6 +280,21 @@ sx_pinfo sx_os_exec(const char* const* argv)
     sx_unused(argv);
     sx_assertf(0, "not implemented");
     return (sx_pinfo){ {0}, 0 };
+#endif    // SX_PLATFORM_
+}
+
+void sx_os_kill(sx_pinfo pinfo)
+{
+#if SX_PLATFORM_LINUX || SX_PLATFORM_HURD
+    kill(pinfo.linux_pid, SIGTERM);
+#elif SX_PLATFORM_WINDOWS
+    TerminateProcess(pinfo.win_process_handle, 0);
+    // Close handles
+    CloseHandle(pinfo.win_process_handle);
+    CloseHandle(pinfo.win_thread_handle);
+#else
+    sx_unused(pinfo);
+    sx_assertf(0, "not implemented");
 #endif    // SX_PLATFORM_
 }
 

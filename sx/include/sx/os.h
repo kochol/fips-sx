@@ -49,6 +49,7 @@ SX_API const char* sx_os_dlerr(void);
 SX_API int sx_os_chdir(const char* path);
 SX_API void sx_os_sleep(int ms);
 SX_API sx_pinfo sx_os_exec(const char* const* argv);
+SX_API void sx_os_kill(sx_pinfo pinfo);
 SX_API bool sx_os_copy(const char* src, const char* dest);
 SX_API bool sx_os_rename(const char* src, const char* dest);
 SX_API bool sx_os_del(const char* path, sx_file_type type);
