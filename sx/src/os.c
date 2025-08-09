@@ -29,6 +29,7 @@ SX_PRAGMA_DIAGNOSTIC_POP()
 #    include <termios.h>
 #    include <time.h>
 #    include <unistd.h>
+#    include <signal.h>
 #    if !SX_PLATFORM_PS4
 #        include <dlfcn.h>    // dlopen, dlclose, dlsym
 #    endif
