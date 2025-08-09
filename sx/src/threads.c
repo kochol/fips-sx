@@ -19,6 +19,7 @@
 #    define __USE_GNU
 #    include <errno.h>
 #    include <pthread.h>
+#    include <sched.h>
 #    include <semaphore.h>
 #    include <sys/prctl.h>
 #    include <time.h>
@@ -214,6 +215,60 @@ sx_thread* sx_thread_create(const sx_alloc* alloc, sx_thread_cb* callback, void*
     sx_assertf(r == 0, "pthread_attr_init failed");
     r = pthread_attr_setstacksize(&attr, thrd->stack_sz);
     sx_assertf(r == 0, "pthread_attr_setstacksize failed");
+
+#    if SX_PLATFORM_APPLE
+    thrd->name[0] = 0;
+    if (name)
+        sx_strcpy(thrd->name, sizeof(thrd->name), name);
+#    endif
+
+    r = pthread_create(&thrd->handle, &attr, thread_fn, thrd);
+    sx_assertf(r == 0, "pthread_create failed");
+
+    // Ensure that thread callback is running
+    sx_semaphore_wait(&thrd->sem, -1);
+
+#    if !SX_PLATFORM_APPLE
+    if (name)
+        sx_thread_setname(thrd, name);
+#    endif
+
+    return thrd;
+}
+
+sx_thread* sx_thread_create_rt(const sx_alloc* alloc, sx_thread_cb* callback, void* user_data1,
+                            int stack_sz, const char* name, void* user_data2)
+{
+    sx_thread* thrd = (sx_thread*)sx_malloc(alloc, sizeof(sx_thread));
+    if (!thrd)
+        return NULL;
+
+    sx_semaphore_init(&thrd->sem);
+    thrd->callback = callback;
+    thrd->user_data1 = user_data1;
+    thrd->user_data2 = user_data2;
+    thrd->stack_sz = sx_max(stack_sz, (int)sx_os_minstacksz());
+    thrd->running = true;
+
+    pthread_attr_t attr;
+    int r = pthread_attr_init(&attr);
+    sx_unused(r);
+    sx_assertf(r == 0, "pthread_attr_init failed");
+    r = pthread_attr_setstacksize(&attr, thrd->stack_sz);
+    sx_assertf(r == 0, "pthread_attr_setstacksize failed");
+    
+    // Set real-time scheduling policy and priority
+    r = pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
+    sx_assertf(r == 0, "pthread_attr_setschedpolicy failed");
+    
+    struct sched_param param;
+    param.sched_priority = sched_get_priority_max(SCHED_FIFO) - 1;
+    r = pthread_attr_setschedparam(&attr, &param);
+    sx_assertf(r == 0, "pthread_attr_setschedparam failed");
+    
+    // Ensure scheduling attributes are explicitly set
+    r = pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+    sx_assertf(r == 0, "pthread_attr_setinheritsched failed");
 
 #    if SX_PLATFORM_APPLE
     thrd->name[0] = 0;
@@ -644,6 +699,12 @@ sx_thread* sx_thread_create(const sx_alloc* alloc, sx_thread_cb* callback, void*
         sx_thread_setname(thrd, name);
 
     return thrd;
+}
+
+sx_thread* sx_thread_create_rt(const sx_alloc* alloc, sx_thread_cb* callback, void* user_data1,
+                            int stack_sz, const char* name, void* user_data2)
+{
+    return sx_thread_create(alloc, callback, user_data1, stack_sz, name, user_data2);
 }
 
 int sx_thread_destroy(sx_thread* thrd, const sx_alloc* alloc)

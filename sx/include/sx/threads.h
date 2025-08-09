@@ -36,6 +36,10 @@ SX_API sx_thread* sx_thread_create(const sx_alloc* alloc, sx_thread_cb* callback
                                    void* user_data1 sx_default(NULL), int stack_sz sx_default(0),
                                    const char* name sx_default(NULL),
                                    void* user_data2 sx_default(NULL));
+SX_API sx_thread* sx_thread_create_rt(const sx_alloc* alloc, sx_thread_cb* callback,
+                                   void* user_data1 sx_default(NULL), int stack_sz sx_default(0),
+                                   const char* name sx_default(NULL),
+                                   void* user_data2 sx_default(NULL));
 SX_API int sx_thread_destroy(sx_thread* thrd, const sx_alloc* alloc);
 SX_API bool sx_thread_running(sx_thread* thrd);
 SX_API void sx_thread_setname(sx_thread* thrd, const char* name);
